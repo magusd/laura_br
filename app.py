@@ -1,15 +1,15 @@
 import os
 from flask import Flask, redirect, url_for, request, render_template
 from pymongo import MongoClient
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
+load_dotenv()
 client = MongoClient(
-    # os.environ['DB_PORT_27017_TCP_ADDR'],
-    'db',
-    27017)
-db = client.students
-
+    os.environ['MONGODB_HOST_SCRIPT'],
+    int(os.environ['MONGODB_PORT']))
+db = client.laura_br
 
 @app.route('/')
 def todo():
