@@ -64,13 +64,29 @@ def alunos_modalidades():
     return resp
 
 
-
 """
 2. Listar todos os cursos de um campus
 a. Tipo da requisição: [a definir]
 b. Parâmetros: campus
 c. Retorno: lista de cursos do campus
 """
+@app.route('/campus/<campus_name>/cursos')
+def campus_cursos(campus_name):
+    # db.students.aggregate([
+    #     { $match: {'campus': "TL"}},
+    # {"$group":{_id: {campus: "$campus", curso: "$curso"}}}
+    #
+    # ])
+    pipeline = [
+        {"$match": {'campus': "TL"}},
+        {"$group": {"_id": {"campus": "$campus", "curso": "$curso"}}}
+    ]
+    _results = db[collection].aggregate(pipeline)
+    items = [item for item in _results]
+    results = JSONEncoder().encode(items)
+    resp = make_response(results, 200)
+    resp.mimetype = "application/json"
+    return resp
 
 
 """
