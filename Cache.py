@@ -30,5 +30,11 @@ outro mais recente) fica por sua conta.
 			return False
 		return self.cache[key]
 
+	def unset(self, key):
+		if key not in self.cache:
+			return False
+		del self.cache[key]
+		self.keys.remove(key)
+
 	def dump(self):
 		return self.cache

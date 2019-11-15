@@ -177,7 +177,14 @@ a. Tipo da requisição: [a definir]
 b. Parâmetros: ra, campus
 c. Retorno: sucesso/erro
 """
-
+@app.route('/alunos/<ra>', methods=['DELETE'])
+def aluno_delete(ra):
+    result = db[collection].remove({'ra':ra})
+    print()
+    if result['ok'] and result['n'] > 0:
+        cache.unset(ra)
+        return "sucesso"
+    return "erro"
 
 
 if __name__ == "__main__":
