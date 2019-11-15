@@ -27,7 +27,7 @@ db = client[database]
 
 @app.route('/')
 def home():
-    return db[collection].find_one({})
+    return 'Visite: https://documenter.getpostman.com/view/150117/SW7Ucqpi?version=latest'
 
 @app.route('/new', methods=['POST'])
 def new():
@@ -54,7 +54,7 @@ def alunos_modalidades():
     arguments = request.args.to_dict()
     query = {
         'modalidade': arguments['tipo'],
-        'data_inicio': {'$gte': arguments['data_inicio'], '$lt': arguments['data_fim']}
+        'data_inicio': {'$gte': arguments['data_inicio'], '$lte': arguments['data_fim']}
     }
     _results = db[collection].find(query)
     items = [item for item in _results]
@@ -78,7 +78,7 @@ def campus_cursos(campus_name):
     #
     # ])
     pipeline = [
-        {"$match": {'campus': "TL"}},
+        {"$match": {'campus': campus_name}},
         {"$group": {"_id": {"campus": "$campus", "curso": "$curso"}}}
     ]
     _results = db[collection].aggregate(pipeline)
@@ -95,6 +95,28 @@ a. Tipo de requisição: [a definir]
 b. Parâmetros: campus, data de início e data de fim
 c. Retorno: número de alunos do campus no período
 """
+@app.route('/campus/<campus_name>/total_alunos')
+def alunos_campus(campus_name):
+    arguments = request.args.to_dict()
+    pipeline = [
+        {"$match": {
+            'campus': campus_name,
+            'data_inicio': {
+                '$gte': arguments['data_inicio'], 
+                '$lte': arguments['data_fim']
+                }
+            },
+        },
+        {"$group": {"_id": campus_name, "count": {"$sum": 1}}}
+    ]
+    _results = db[collection].aggregate(pipeline)
+    items = [item for item in _results]
+    results = JSONEncoder().encode(items[0])
+    resp = make_response(results, 200)
+    resp.mimetype = "application/json"
+    return resp
+
+
 """
 4. Cadastrar alunos
 a. Tipo da requisição: [a definir]
@@ -102,6 +124,7 @@ b. Parâmetros: nome, idade_ate_31_12_2016, ra, campus, município, curso, modal
 nivel_do_curso, data_inicio
 c. Retorno: sucesso/erro
 """
+
 """
 5. Buscar aluno
 a. Tipo da requisição: [a definir]
