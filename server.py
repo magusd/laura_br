@@ -4,7 +4,9 @@ from flask import Flask, redirect, url_for, request, make_response
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson import ObjectId
+from Cache import Cache
 
+cache = Cache(10)
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, o):
@@ -17,7 +19,8 @@ app = Flask(__name__)
 
 load_dotenv()
 client = MongoClient(
-    os.environ['MONGODB_HOST'],
+    # os.environ['MONGODB_HOST'],
+    os.environ['MONGODB_HOST_SCRIPT'],
     int(os.environ['MONGODB_PORT']))
 
 database = os.environ['MONGODB_DATABASE']
@@ -29,16 +32,17 @@ db = client[database]
 def home():
     return 'Visite: https://documenter.getpostman.com/view/150117/SW7Ucqpi?version=latest'
 
-@app.route('/new', methods=['POST'])
-def new():
-
-    item_doc = {
-        'name': request.form['name'],
-        'description': request.form['description']
-    }
-    db.tododb.insert_one(item_doc)
-
-    return redirect(url_for('todo'))
+"""
+Rota para testar o funcionamento do cache
+"""
+@app.route('/cache')
+def caching():
+    for i in range(20):
+      cache.set(i,i)
+    results = JSONEncoder().encode(cache.dump())
+    resp = make_response(results, 200)
+    resp.mimetype = "application/json"
+    return resp
 
 
 """
@@ -124,6 +128,27 @@ b. Parâmetros: nome, idade_ate_31_12_2016, ra, campus, município, curso, modal
 nivel_do_curso, data_inicio
 c. Retorno: sucesso/erro
 """
+@app.route('/alunos', methods=['POST'])
+def aluno_create():
+    aluno = {
+        'nome': request.form['nome'],
+        'idade_ate_31_12_2016': request.form['idade_ate_31_12_2016'],
+        'ra': request.form['ra'],
+        'campus': request.form['campus'],
+        'municipio': request.form['municipio'],
+        'curso': request.form['curso'],
+        'modalidade': request.form['modalidade'],
+        'nivel_do_curso': request.form['nivel_do_curso'],
+        'data_inicio': request.form['data_inicio']
+    }
+    insert_result = db[collection].insert_one(aluno)
+    if(insert_result.acknowledged):
+        aluno["_id"] = insert_result.inserted_id
+        #caching
+        cache.set(aluno['ra'],aluno)
+        return 'sucesso'
+    else:
+        return 'erro'
 
 """
 5. Buscar aluno
@@ -131,6 +156,21 @@ a. Tipo da requisição: [a definir]
 b. Parâmetro: ra
 c. Retorno: todos os dados do aluno
 """
+@app.route('/alunos/<ra>')
+def aluno_get(ra):
+    aluno = cache.get(ra)
+    if not aluno:
+        aluno = db[collection].find_one({'ra':ra})
+        if aluno:
+            cache.set(aluno['ra'],aluno)
+        else:
+            return make_response('', 404)
+
+    results = JSONEncoder().encode(aluno)
+    resp = make_response(results, 200)
+    resp.mimetype = "application/json"
+    return resp
+
 """
 6. Remover aluno do banco
 a. Tipo da requisição: [a definir]
