@@ -19,8 +19,8 @@ app = Flask(__name__)
 
 load_dotenv()
 client = MongoClient(
-    # os.environ['MONGODB_HOST'],
-    os.environ['MONGODB_HOST_SCRIPT'],
+    os.environ['MONGODB_HOST'],
+    # os.environ['MONGODB_HOST_SCRIPT'],
     int(os.environ['MONGODB_PORT']))
 
 database = os.environ['MONGODB_DATABASE']
